@@ -1,0 +1,10 @@
+This packet capture was conducted from behind the ASA NAT:
+
+Hostname: 			ZenBook
+Operating System:		Windows 11
+IP Address:			10.60.11.14
+Subnet:			255.255.0.0 / 16
+Default Gateway:		10.60.11.1
+DNS Server:			8.8.8.8
+
+
