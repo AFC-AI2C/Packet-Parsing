@@ -1,10 +1,7 @@
 #! /usr/bin/python3
 
-import sys
 from scapy.all import *
-import re
-import csv
-import time
+import sys, re, time, csv
 
 """
 usage:
@@ -68,8 +65,25 @@ with open(savefile, 'w', newline='') as csvfile:
                         # print('+1 ' + (indent * "\t") + line)
 
                 print(xml_pl)
-                # xml_pl=xml_pl.split("\n")
-                # print(xml_str)
+
+                """
+                <?xml version="1.0" encoding="utf-8"?>
+                        <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsd="http://schemas.xmlsoap.org/ws/2005/04/discovery">
+                                <soap:Header>
+                                        <wsa:To>urn:schemas-xmlsoap-org:ws:2005:04:discovery</wsa:To>
+                                        <wsa:Action>http://schemas.xmlsoap.org/ws/2005/04/discovery/Resolve</wsa:Action>
+                                        <wsa:MessageID>urn:uuid:15cc822e-f5d7-4414-a7dc-dce3d9f6d1da</wsa:MessageID>
+                ##### Note: no Authentication Header observed #####
+                                </soap:Header>
+                                <soap:Body>
+                                        <wsd:Resolve>
+                                                <wsa:EndpointReference>
+                                                        <wsa:Address>uuid:0021ca00-1dd2-11b2-b44b-0022f3893201</wsa:Address>
+                                                </wsa:EndpointReference>
+                                        </wsd:Resolve>
+                                </soap:Body>
+                        </soap:Envelope>
+                """
                 
 
                 EventCallSign = ''
@@ -203,28 +217,5 @@ with open(savefile, 'w', newline='') as csvfile:
             continue
 
 
-    # print(blackboxprotobuf.decode_message('uuid:0021ca00-1dd2-11b2-b44b-0022f3893201'))
-# protofile='file.txt'
-# with open(protofile, 'rb') as f:
-#    pb = f.read()
-
-"""
-<?xml version="1.0" encoding="utf-8"?>
-        <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wsd="http://schemas.xmlsoap.org/ws/2005/04/discovery">
-                <soap:Header>
-                        <wsa:To>urn:schemas-xmlsoap-org:ws:2005:04:discovery</wsa:To>
-                        <wsa:Action>http://schemas.xmlsoap.org/ws/2005/04/discovery/Resolve</wsa:Action>
-                        <wsa:MessageID>urn:uuid:15cc822e-f5d7-4414-a7dc-dce3d9f6d1da</wsa:MessageID>
-##### Note: no Authentication Header observed #####
-                </soap:Header>
-                <soap:Body>
-                        <wsd:Resolve>
-                                <wsa:EndpointReference>
-                                        <wsa:Address>uuid:0021ca00-1dd2-11b2-b44b-0022f3893201</wsa:Address>
-                                </wsa:EndpointReference>
-                        </wsd:Resolve>
-                </soap:Body>
-        </soap:Envelope>
-"""
 
 
