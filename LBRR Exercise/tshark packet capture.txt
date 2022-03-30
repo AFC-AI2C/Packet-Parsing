@@ -1,8 +1,9 @@
-tshark -b duration:10 -i eth0 -w packets.pcap 
+tshark -b duration:600 -i eth0 -w packets.pcap 
 tshark -u s -b duration:10 -i eth0 -Y "ip.dst == 224.0.0.251"
 tshark -u s -b duration:10 -i eth0 -w packets.pcap
 
 
+# for reference only
 tshark -r 'LBRR behind Cisco ASA NAT - filtered.pcapng' -T fields -E header=y -E separator=, -E quote=d -E occurrence=f \
 -e ip.src -e ip.dst -e tcp.srcport -e tcp.dstport -e ip.src_host -e ip.dst_host -e ip.host \
 -e ip.ttl -e ip.version -e ip.hdr_len -e ip.tos -e ip.id  -e ip.checksum.status -e ip.flags \
@@ -15,6 +16,7 @@ tshark -r 'LBRR behind Cisco ASA NAT - filtered.pcapng' -T fields -E header=y -E
 -e tcp.checksum -e tcp.urgent_pointer -e tcp.options.mss_val \
 > output_tcp.csv
 
+# for reference only
 tshark -r 'LBRR behind Cisco ASA NAT - filtered.pcapng' -T fields -E header=y -E separator=, -E quote=d -E occurrence=f \
 -e ip.src -e ip.dst -e udp.srcport -e udp.dstport -e ip.src_host -e ip.dst_host -e ip.host \
 -e ip.ttl -e ip.version -e ip.hdr_len -e ip.tos -e ip.id  -e ip.checksum.status -e ip.flags \
@@ -27,9 +29,5 @@ tshark -r 'LBRR behind Cisco ASA NAT - filtered.pcapng' -T fields -E header=y -E
 -e udp.possible_traceroute \
 > output_udp.csv
 
-
-((((((((ip.addr >= 224.0.0.0) ) ) && !(dns.qry.name == "coeusCL")) && !(dns.qry.name == "coeusCL.local")) && !(dns.qry.name == "coeus.local")) && !(dns.qry.name == "coeus")) && !(dns.qry.name == "coeusNF.local")) && !(dns.qry.name == "coeusNF")
-
-(((((((((ip.addr >= 224.0.0.0) ) ) && !(dns.qry.name == "coeusCL")) && !(dns.qry.name == "coeusCL.local")) && !(dns.qry.name == "coeus.local")) && !(dns.qry.name == "coeus")) && !(dns.qry.name == "coeusNF.local")) && !(dns.qry.name == "coeusNF")) && (udp)
 
 
