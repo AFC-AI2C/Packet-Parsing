@@ -69,8 +69,8 @@ with open(savefile, 'w', newline='') as csvfile:
                                 imageCount += 1
                                 saveImage = "extracted-image-{0}.png".format(str(imageCount).zfill(6))
                                 command   = "echo '{0}' | base64 -d > images/{1} 2> /dev/null".format(frag_reassemble,saveImage)
-                                saveTSing = "extracted-image-{0}.txt".format(str(imageCount).zfill(6))
-                                command   = "echo '{0}' > images/{1} 2> /dev/null".format(frag_reassemble,saveTSing)
+                                # saveTSing = "extracted-image-{0}.txt".format(str(imageCount).zfill(6))
+                                # command   = "echo '{0}' > images/{1} 2> /dev/null".format(frag_reassemble,saveTSing)
                                 os.system(command)
                             # Resets buffer
                             frag_reassemble = ''
