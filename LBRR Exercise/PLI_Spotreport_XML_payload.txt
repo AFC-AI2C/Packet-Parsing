@@ -1,0 +1,33 @@
+Complete string for spot report
+
+<?xml version="1.0" encoding="utf-8"?>
+<event access="unrestricted" how="" opex="s" qos="7-r-c" stale="2020-06-17T02:57:55Z" start="2020-06-16T16:57:55Z" time="2020-06-16T16:57:55Z" type="a-f-G-U-C-I" uid="29" version="2.0"><point ce="0" hae="331.649466" lat="36.5729145" le="0" lon="-87.4764344"/><detail><image height="126" mime="image/jpeg" size="6331" type="EO" width="99"/></detail></event>
+
+Pretty print spot report
+
+<?xml version="1.0" encoding="utf-8"?>
+<event access="unrestricted" how="" opex="s" qos="7-r-c" stale="2020-06-17T02:57:55Z" start="2020-06-16T16:57:55Z" time="2020-06-16T16:57:55Z" type="a-f-G-U-C-I" uid="29" version="2.0">
+ <point ce="0" hae="331.649466" lat="36.5729145" le="0" lon="-87.4764344"/>
+ <detail>
+  <image height="126" mime="image/jpeg" size="6331" type="EO" width="99"/>
+ </detail>
+</event>
+
+The two payloads above are for spot reports, note the: mime="image/jpeg"
+
+
+
+Complete string PLI
+
+<?xml version="1.0" encoding="utf-8"?>
+<event access="unrestricted" how="m-f" opex="s" qos="7-r-c" stale="2020-06-17T02:56:39Z" start="2020-06-16T16:56:39Z" time="2020-06-16T16:56:39Z" type="a-f-G-E-V" uid="AIDTR Gator 0" version="2.0"><point ce="0.5" hae="332.116248" lat="36.5729466" le="0.5" lon="-87.476235"/><detail/></event>
+
+Pretty print PLI
+
+<?xml version="1.0" encoding="utf-8"?>
+<event access="unrestricted" how="m-f" opex="s" qos="7-r-c" stale="2020-06-17T02:56:39Z" start="2020-06-16T16:56:39Z" time="2020-06-16T16:56:39Z" type="a-f-G-E-V" uid="AIDTR Gator 0" version="2.0">
+ <point ce="0.5" hae="332.116248" lat="36.5729466" le="0.5" lon="-87.476235"/>
+ <detail/>
+</event>
+
+These two are for basic PLI, note the: type="a-f-G-E-V" uid="AIDTR Gator 0" 
