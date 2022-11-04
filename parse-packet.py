@@ -1,11 +1,12 @@
-#! /usr/bin/python3
+#! /usr/bin/env python3
 
 from scapy.all import *
 import sys, re, time, csv, datetime, ipaddress, requests
 import xml.etree.ElementTree as ET
+import psycopg2
 
 """
-usage:
+Usage:
     Syntax
     ./parse-packet.py file.pcap <ip address>
 
@@ -26,6 +27,11 @@ usage:
 
     IP file list (one ip per line)
     ./parse-packet.py <nic_name> ip-list.txt
+
+Description:
+    Able to parse network traffic or packet captures for Position Location Information (PLI)
+    for drones by using an single IP, Subnet, or IP list.
+    Data can be displayed on the terminal, written to a CSV file, or sent to a postgresql database.  
 """
 
 # The directory that PLI data will be saved to
@@ -38,7 +44,8 @@ os.system(command)
 
 # Write logs information to file and display on terminal
 def writeLog(message):
-    logFile=f"{savePath}/processing-packet.log"
+    # logFile=f"{savePath}/processing-packet.log"
+    logFile=f"./processing-packet.log"
     with open(logFile, 'a') as f:
         original_stdout = sys.stdout
         sys.stdout = f
@@ -74,19 +81,23 @@ except:
     writeLog(f"Processing packets for IP: {sys.argv[2]}")
 
 
+# Location of images extracted from within drones
 imagesExtracted='images-extracted-from-packets'
 command = f"mkdir -p {savePath}/{imagesExtracted} 2> /dev/null"
 os.system(command)
 writeLog("Checking if images directory exists and creating if necessary")
 
+# Location of images pulled directly from dones
 imagesPulled='images-pulled-from-drones'
 command = f"mkdir -p {savePath}/{imagesPulled} 2> /dev/null"
 os.system(command)
 writeLog("Checking if images directory exists and creating if necessary")
 
-
+# Location of CSV files for drone PLI and Images
 saveFilePli     = f"{savePath}/packet-parsed-output-pli.csv"
 saveFileImages  = f"{savePath}/packet-parsed-output-images.csv"
+
+
 if os.path.isfile(saveFileImages):
     pass
 else:
@@ -95,9 +106,7 @@ else:
         packetparse.writerow(['proto','srcip','sport','dstip','dport','how ','stale','start','time','etype','uid','version','ce','hae','lat','le','lon','opex','qos','image_uid','parent_callsign','relation','image_url'])
     with open(saveFilePli, 'w', newline='') as csvfile:
         packetparse = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-        packetparse.writerow(['proto','srcip','sport','dstip','dport','how ','stale','start','time','etype','uid','version','ce','hae','lat','le','lon','callsign','droid','urn','altsrc','geopointsrc','role','name','course','speed','murmur'])
-
-
+        packetparse.writerow(['proto','srcip','sport','dstip','dport','how ','stale','start','time','etype','uid','version','ce','hae','lat','le','lon','callsign','urn','altsrc','geopointsrc','course','speed','murmur'])
 
 
 def process_packets(scapy_cap):
@@ -118,8 +127,13 @@ def process_packets(scapy_cap):
 
         for packet in scapy_cap:
             imageDetected = False
+
             try:
                 if packet[IP].src == ip:
+                    # print("##################################################")
+                    # print(f"PACKET: {packet[IP].src} <--> {packet[IP].dst}")
+
+                    # print(f"UDP: {packet[IP].src}:{packet[UDP].sport} <--> {packet[IP].dst}:{packet[UDP].dport}")
                     # writeLog(f"Processing Packet IP: {ip}")
                     
                     #############
@@ -255,74 +269,175 @@ def process_packets(scapy_cap):
                     dstip = DestinationIP
                     dport = DestinationPort
 
-                    event = ET.fromstring(xml_str)
                     # print(xml_str)
 
-                    if 'opex' in xml_str and 'qos' in xml_str:
-                        imageDetected = True
+                    try:
+                        if 'opex' in xml_str and 'qos' in xml_str:
+                            event = ET.fromstring(xml_str)
+                            imageDetected = True
+                            print(f"IMG: {packet[IP].src}:{packet[UDP].sport} <--> {packet[IP].dst}:{packet[UDP].dport}")
+                            print(xml_str)
+                            print('----------')
 
-                        # Creates values for data with urls embedded
-                        how = event.attrib["how"]
-                        opex = event.attrib["opex"]
-                        qos = event.attrib["qos"]
-                        stale = event.attrib["stale"]
-                        start = event.attrib["start"]
-                        time = event.attrib["time"]
-                        etype = event.attrib["type"]
-                        uid = event.attrib["uid"]
-                        version = event.attrib["version"]
-                        point = event.find('point')
-                        ce = point.attrib["ce"]
-                        hae = point.attrib["hae"]
-                        lat = point.attrib["lat"]
-                        le = point.attrib["le"]
-                        lon = point.attrib["lon"]
-                        detail = event.find('detail')
-                        image_uid = detail.find('link').attrib['uid']
-                        parent_callsign = detail.find('link').attrib['parent_callsign']
-                        relation = detail.find('link').attrib['relation']
-                        image_url = detail.find('image').attrib['url']
-                        
+                            # Creates values for data with urls embedded
+                            how = event.attrib["how"]
+                            opex = event.attrib["opex"]
+                            qos = event.attrib["qos"]
+                            stale = event.attrib["stale"]
+                            start = event.attrib["start"]
+                            time = event.attrib["time"]
+                            etype = event.attrib["type"]
+                            uid = event.attrib["uid"]
+                            version = event.attrib["version"]
+                            point = event.find('point')
+                            ce = point.attrib["ce"]
+                            hae = point.attrib["hae"]
+                            lat = point.attrib["lat"]
+                            le = point.attrib["le"]
+                            lon = point.attrib["lon"]
+                            detail = event.find('detail')
+                            image_uid = detail.find('link').attrib['uid']
+                            parent_callsign = detail.find('link').attrib['parent_callsign']
+                            relation = detail.find('link').attrib['relation']
+                            image_url = detail.find('image').attrib['url']
+                            
+                            # print(f"how:             {how}")
+                            # print(f"stale:           {stale}")
+                            # print(f"start:           {start}")
+                            # print(f"time:            {time}")
+                            # print(f"etype:           {etype}")
+                            # print(f"uid:             {uid}")
+                            # print(f"version:         {version}")
+                            # print(f"point:           {point}")
+                            # print(f"ce:              {ce}")
+                            # print(f"hae:             {hae}")
+                            # print(f"lat:             {lat}")
+                            # print(f"le:              {le}")
+                            # print(f"lon:             {lon}")
+                            # print(f"detail:          {detail}")
+                            # print(f"image_uid:       {image_uid}")
+                            # print(f"parent_callsign: {parent_callsign}")
+                            # print(f"relation:        {relation}")
+                            # print(f"altsrc:          {altsrc}")
+                            # print(f"image_url:       {image_url}")
 
-                        # Writes values to csv file, one line at a time
-                        writeLog(f"Writing PLI Data To File For IP: {ip}")                
-                        with open(saveFileImages, 'a', newline='') as csvfile:
-                            packetparse = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-                            packetparse.writerow([proto,srcip,sport,dstip,dport,how ,stale,start,time,etype,uid,version,ce,hae,lat,le,lon,opex,qos,image_uid,parent_callsign,relation,image_url])
-                    else:
-                        imageDetected = False
-                        # Creates values from normal PLI data
-                        how = event.attrib["how"]
-                        stale = event.attrib["stale"]
-                        start = event.attrib["start"]
-                        time = event.attrib["time"]
-                        etype = event.attrib["type"]
-                        uid = event.attrib["uid"]
-                        version = event.attrib["version"]
-                        point = event.find('point')
-                        ce = point.attrib["ce"]
-                        hae = point.attrib["hae"]
-                        lat = point.attrib["lat"]
-                        le = point.attrib["le"]
-                        lon = point.attrib["lon"]
-                        detail = event.find('detail')
-                        callsign = detail.find('contact').attrib['callsign']
-                        droid = detail.find('uid').attrib['Droid']
-                        urn = detail.find('vmf').attrib['urn']
-                        altsrc = detail.find('precisionlocation').attrib['altsrc']
-                        geopointsrc = detail.find('precisionlocation').attrib['geopointsrc']
-                        role = detail.find('__group').attrib['role']
-                        name = detail.find('__group').attrib['name']
-                        course = detail.find('track').attrib['course']
-                        speed = detail.find('track').attrib['speed']
-                        murmur = detail.find('robot').attrib['murmur']
+                            # print(f"Parent CallSign: {parent_callsign} - LAT: {lat} - LON: {lon} ")
+                            # print("============================")
+
+                            # Writes values to csv file, one line at a time
+                            try:
+                                writeLog(f"Writing PLI Data To File For IP: {ip}")                
+                                with open(saveFileImages, 'a', newline='') as csvfile:
+                                    packetparse = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                                    packetparse.writerow([proto,srcip,sport,dstip,dport,how ,stale,start,time,etype,uid,version,ce,hae,lat,le,lon,opex,qos,image_uid,parent_callsign,relation,image_url])
+                            except:
+                                continue
+
+                            # Saves data to postgresql database
+                            try:
+                                connection = psycopg2.connect(user="postgres",
+                                                            password="afc_ai2c",
+                                                            host="192.168.20.189",
+                                                            port="5432",
+                                                            database="pli")
+                                cursor = connection.cursor()
+
+                                postgres_insert_query = """ INSERT INTO targets (proto,srcip,sport,dstip,dport,how,stale,start,time,etype,uid,version,ce,hae,lat,le,lon,opex,qos,image_uid,parent_callsign,relation,image_url) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
+                                record_to_insert = (proto,srcip,sport,dstip,dport,how,stale,start,time,etype,uid,version,ce,hae,lat,le,lon,opex,qos,image_uid,parent_callsign,relation,image_url)
+                                cursor.execute(postgres_insert_query, record_to_insert)
+
+                                connection.commit()
+                                count = cursor.rowcount
+                                print(count, "Record inserted successfully into targets table")
+
+                            except (Exception, psycopg2.Error) as error:
+                                print("Failed to insert record into targets table", error)
+
+                            finally:
+                                # closing database connection.
+                                if connection:
+                                    cursor.close()
+                                    connection.close()
+                                    print("PostgreSQL connection is closed")
+
+                    except:
+                        continue
 
 
-                        # Writes values to csv file, one line at a time
-                        writeLog(f"Writing PLI Data To File For IP: {ip}")                
-                        with open(saveFilePli, 'a', newline='') as csvfile:
-                            packetparse = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
-                            packetparse.writerow([proto,srcip,sport,dstip,dport,how ,stale,start,time,etype,uid,version,ce,hae,lat,le,lon,callsign,droid,urn,altsrc,geopointsrc,role,name,course,speed,murmur])
+                    try:
+                        if not 'opex' in xml_str:
+                            event = ET.fromstring(xml_str)
+                            # print(f"PLI: {packet[IP].src}:{packet[UDP].sport} <--> {packet[IP].dst}:{packet[UDP].dport}")
+                            # print(xml_str)
+                            # print('----------')
+                            imageDetected = False
+                            # Creates values from normal PLI data
+                            how = event.attrib["how"]
+                            stale = event.attrib["stale"]
+                            start = event.attrib["start"]
+                            time = event.attrib["time"]
+                            etype = event.attrib["type"]
+                            uid = event.attrib["uid"]
+                            version = event.attrib["version"]
+                            point = event.find('point')
+                            ce = point.attrib["ce"]
+                            hae = point.attrib["hae"]
+                            lat = point.attrib["lat"]
+                            le = point.attrib["le"]
+                            lon = point.attrib["lon"]
+                            detail = event.find('detail')
+                            callsign = detail.find('contact').attrib['callsign']
+                            # droid = detail.find('uid').attrib['Droid']
+                            urn = detail.find('vmf').attrib['urn']
+                            altsrc = detail.find('precisionlocation').attrib['altsrc']
+                            geopointsrc = detail.find('precisionlocation').attrib['geopointsrc']
+                            # role = detail.find('__group').attrib['role']
+                            # name = detail.find('__group').attrib['name']
+                            course = detail.find('track').attrib['course']
+                            speed = detail.find('track').attrib['speed']
+                            murmur = detail.find('robot').attrib['murmur']
+
+                            # print(f"{[proto,srcip,sport,dstip,dport,how ,stale,start,time,etype,uid,version,ce,hae,lat,le,lon,callsign,urn,altsrc,geopointsrc,course,speed,murmur]}")
+                            
+                            # Writes values to csv file, one line at a time
+                            try:
+                                writeLog(f"Writing PLI Data To File For IP: {ip}")                
+                                with open(saveFilePli, 'a', newline='') as csvfile:
+                                    packetparse = csv.writer(csvfile, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+                                    packetparse.writerow([proto,srcip,sport,dstip,dport,how ,stale,start,time,etype,uid,version,ce,hae,lat,le,lon,callsign,urn,altsrc,geopointsrc,course,speed,murmur])
+                            except:
+                                continue
+
+                            # Saves data to postgresql database
+                            try:
+                                connection = psycopg2.connect(user="postgres",
+                                                            password="afc_ai2c",
+                                                            host="192.168.20.189",
+                                                            port="5432",
+                                                            database="pli")
+                                cursor = connection.cursor()
+
+                                postgres_insert_query = """ INSERT INTO drones (proto,srcip,sport,dstip,dport,how,stale,start,time,etype,uid,version,ce,hae,lat,le,lon,callsign,urn,altsrc,geopointsrc,course,speed,murmur) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)"""
+                                record_to_insert = (proto,srcip,sport,dstip,dport,how ,stale,start,time,etype,uid,version,ce,hae,lat,le,lon,callsign,urn,altsrc,geopointsrc,course,speed,murmur)
+                                cursor.execute(postgres_insert_query, record_to_insert)
+
+                                connection.commit()
+                                count = cursor.rowcount
+                                print(count, "Record inserted successfully into drones table")
+
+                            except (Exception, psycopg2.Error) as error:
+                                print("Failed to insert record into drones table", error)
+
+                            finally:
+                                # closing database connection.
+                                if connection:
+                                    cursor.close()
+                                    connection.close()
+                                    print("PostgreSQL connection is closed")
+
+                    except:
+                        continue
+
             except:
                 continue
             finally:
